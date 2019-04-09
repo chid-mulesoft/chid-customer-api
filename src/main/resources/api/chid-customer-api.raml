@@ -1,0 +1,49 @@
+#%RAML 1.0
+title: chid-customer-api
+baseUri: http://localhost:8081
+version: v1
+
+types: 
+  customer:
+    properties: 
+      id: string
+      firstname: string
+      lastname: string
+      age: number
+
+  errorResponse:
+    properties:
+      errorCode: string
+      errorMessage: string
+  
+  successResponse:
+    properties: 
+      successCode: string
+      successMessage: string
+
+/customer/{id}:
+  get:
+    responses: 
+      200:
+        body: 
+          application/json:
+            type: customer
+      500:
+        body: 
+          application/json:
+            type: errorResponse
+            
+  post:
+    body: 
+      application/json:
+        type: customer
+    responses: 
+      201:
+        body: 
+          application/json:
+            type: successResponse
+            
+      500:
+        body: 
+          application/json:
+            type: errorResponse
