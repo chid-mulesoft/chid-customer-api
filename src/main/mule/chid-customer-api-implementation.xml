@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd 
+                         http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <flow name="get-customer-by-id-flow" doc:name="Get Customer By ID Implementation Flow" doc:id="get-customer-by-id-flow">
+        <logger level="INFO" doc:name="Start Logger" doc:id="start-logger" message='{"message": "Starting get customer by ID flow", "customerId": "#[attributes.uriParams.id]", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+
+        <set-variable variableName="customerId" value="#[attributes.uriParams.id]" doc:name="Set Customer ID" doc:id="set-customer-id" />
+
+        <ee:transform doc:name="Build Customer Response" doc:id="build-customer-response">
+            <ee:message>
+                <ee:set-payload>
+                    <![CDATA[%dw 2.0
+output application/json
+---
+{
+    "id": vars.customerId,
+    "firstName": "Chid",
+    "lastName": "Customer",
+    "age": 18,
+    "timestamp": now()
+}]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+
+        <logger level="INFO" doc:name="End Logger" doc:id="end-logger" message='{"message": "Completed get customer by ID flow", "customerId": "#[vars.customerId]", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+
+        <error-handler ref="global-error-handler" doc:name="Reference Global Error Handler" doc:id="ref-impl-global-error-handler" />
+    </flow>
+
+    <flow name="post-customer-by-id-flow" doc:name="Post Customer By ID Implementation Flow" doc:id="post-customer-by-id-flow">
+        <logger level="INFO" doc:name="Start Logger" doc:id="post-start-logger" message='{"message": "Starting post customer by ID flow", "customerId": "#[attributes.uriParams.id]", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+
+        <set-variable variableName="customerId" value="#[attributes.uriParams.id]" doc:name="Set Customer ID" doc:id="post-set-customer-id" />
+
+        <ee:transform doc:name="Build Success Response" doc:id="build-success-response">
+            <ee:message>
+                <ee:set-payload>
+                    <![CDATA[%dw 2.0
+output application/json
+---
+{
+    "message": "Customer updated successfully",
+    "customerId": vars.customerId,
+    "timestamp": now()
+}]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+
+        <logger level="INFO" doc:name="End Logger" doc:id="post-end-logger" message='{"message": "Completed post customer by ID flow", "customerId": "#[vars.customerId]", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+
+        <error-handler ref="global-error-handler" doc:name="Reference Global Error Handler" doc:id="ref-post-impl-global-error-handler" />
+    </flow>
+
+</mule>
