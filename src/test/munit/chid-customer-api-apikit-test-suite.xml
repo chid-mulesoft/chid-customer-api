@@ -5,7 +5,7 @@
 
     <munit:config name="chid-customer-api-apikit-test-suite.xml" />
 
-    <munit:test name="get-customer-by-id-apikit-flow-success" description="Verify that the APIKit GET flow calls the implementation flow correctly">
+    <munit:test name="get-customer-by-id-apikit-flow-success1" description="Verify that the APIKit GET flow calls the implementation flow correctly">
         <munit:behavior>
             <munit:set-event>
                 <munit:payload value='{}' mediaType="application/json" />
