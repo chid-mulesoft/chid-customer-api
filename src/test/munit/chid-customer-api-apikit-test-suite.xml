@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd 
+                         http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd 
+                         http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+
+    <munit:config name="chid-customer-api-apikit-test-suite.xml" />
+
+    <munit:test name="get-customer-by-id-apikit-flow-success1" description="Verify that the APIKit GET flow calls the implementation flow correctly">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{}' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": "12345"
+                    },
+                    "method": "GET",
+                    "requestPath": "/api/customers/12345"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="get-customer-by-id-apikit-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.id]" expected="12345" />
+            <munit-tools:assert-equals actual="#[payload.firstName]" expected="Chid" />
+            <munit-tools:assert-equals actual="#[payload.lastName]" expected="Customer" />
+            <munit-tools:assert-equals actual="#[payload.age]" expected="#[18]" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="get-customer-by-id-apikit-flow-different-id" description="Verify that the APIKit GET flow works with different customer IDs">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{}' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": "54321"
+                    },
+                    "method": "GET",
+                    "requestPath": "/api/customers/54321"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="get-customer-by-id-apikit-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.id]" expected="54321" />
+            <munit-tools:assert-equals actual="#[payload.firstName]" expected="Chid" />
+            <munit-tools:assert-equals actual="#[payload.lastName]" expected="Customer" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="post-customer-by-id-apikit-flow-success" description="Verify that the APIKit POST flow calls the implementation flow correctly">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{
+                    "firstName": "Updated",
+                    "lastName": "Customer",
+                    "age": 25
+                }' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": "12345"
+                    },
+                    "method": "POST",
+                    "requestPath": "/api/customers/12345"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="post-customer-by-id-apikit-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.message]" expected="Customer updated successfully" />
+            <munit-tools:assert-equals actual="#[payload.customerId]" expected="12345" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="post-customer-by-id-apikit-flow-different-payload" description="Verify that the APIKit POST flow handles different payload structures">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{
+                    "firstName": "Another",
+                    "lastName": "Person",
+                    "age": 30,
+                    "email": "another@example.com"
+                }' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": "99999"
+                    },
+                    "method": "POST",
+                    "requestPath": "/api/customers/99999"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="post-customer-by-id-apikit-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.message]" expected="Customer updated successfully" />
+            <munit-tools:assert-equals actual="#[payload.customerId]" expected="99999" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+</mule>

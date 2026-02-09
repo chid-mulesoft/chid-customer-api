@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd 
+                         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+                         http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+                         http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <flow name="chid-customer-interface-main" doc:name="Customer API Interface Main Flow" doc:id="interface-main-flow">
+        <http:listener config-ref="chid-customer-api-httpListenerConfig" path="/api/*" doc:name="API Listener" doc:id="api-listener">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <logger level="INFO" doc:name="Flow Start Logger" doc:id="flow-start-logger" message='{"message": "API request received", "method": "#[attributes.method]", "path": "#[attributes.requestPath]", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+        <apikit:router config-ref="chid-customer-api-config" doc:name="APIKit Router" doc:id="apikit-router" />
+        <logger level="INFO" doc:name="Flow End Logger" doc:id="flow-end-logger" message='{"message": "API request completed", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+        <error-handler ref="global-error-handler" doc:name="Reference Global Error Handler" doc:id="ref-global-error-handler" />
+    </flow>
+
+    <flow name="chid-customer-interface-console" doc:name="Customer API Interface Console Flow" doc:id="interface-console-flow">
+        <http:listener config-ref="chid-customer-api-httpListenerConfig" path="/console/*" doc:name="Console Listener" doc:id="console-listener">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <logger level="INFO" doc:name="Console Access Logger" doc:id="console-access-logger" message='{"message": "API Console accessed", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+        <apikit:console config-ref="chid-customer-api-config" doc:name="APIKit Console" doc:id="apikit-console" />
+        <error-handler ref="global-error-handler" doc:name="Reference Global Error Handler" doc:id="ref-console-global-error-handler" />
+    </flow>
+
+</mule>
