@@ -3,9 +3,9 @@ title: chid-customer-api
 baseUri: http://localhost:8081
 version: v1
 
-types: 
+types:
   customer:
-    properties: 
+    properties:
       id: string
       firstname: string
       lastname: string
@@ -15,35 +15,60 @@ types:
     properties:
       errorCode: string
       errorMessage: string
-  
+
   successResponse:
-    properties: 
+    properties:
       successCode: string
       successMessage: string
 
 /customer/{id}:
   get:
-    responses: 
+    responses:
       200:
-        body: 
+        body:
           application/json:
             type: customer
       500:
-        body: 
+        body:
           application/json:
             type: errorResponse
-            
+
   post:
-    body: 
+    body:
       application/json:
         type: customer
-    responses: 
+    responses:
       201:
-        body: 
+        body:
           application/json:
             type: successResponse
-            
+
       500:
-        body: 
+        body:
+          application/json:
+            type: errorResponse
+
+  patch:
+    body:
+      application/json:
+        type: customer
+    responses:
+      200:
+        body:
+          application/json:
+            type: successResponse
+
+      400:
+        body:
+          application/json:
+            type: errorResponse
+
+      404:
+        body:
+          application/json:
+            type: errorResponse
+
+      500:
+        body:
           application/json:
             type: errorResponse

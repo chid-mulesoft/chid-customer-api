@@ -54,4 +54,105 @@ output application/json
         <error-handler ref="global-error-handler" doc:name="Reference Global Error Handler" doc:id="ref-post-impl-global-error-handler" />
     </flow>
 
+    <flow name="patch-customer-by-id-flow" doc:name="PATCH Customer By ID Implementation Flow" doc:id="patch-customer-by-id-flow">
+        <logger level="INFO" doc:name="Start Logger" doc:id="patch-start-logger" message='{"message": "Starting PATCH customer by ID flow", "customerId": "#[attributes.uriParams.id]", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+
+        <set-variable variableName="customerId" value="#[attributes.uriParams.id]" doc:name="Set Customer ID" doc:id="patch-set-customer-id" />
+        <set-variable variableName="requestPayload" value="#[payload]" doc:name="Store Request Payload" doc:id="patch-store-payload" />
+
+        <!-- Validate customer exists (simulated) -->
+        <choice doc:name="Validate Customer Exists" doc:id="patch-validate-customer">
+            <when expression="#[vars.customerId == null or isEmpty(vars.customerId)]">
+                <ee:transform doc:name="Customer ID Missing Error" doc:id="patch-customer-id-missing">
+                    <ee:message>
+                        <ee:set-payload>
+                            <![CDATA[%dw 2.0
+output application/json
+---
+{
+    "errorCode": "INVALID_CUSTOMER_ID",
+    "errorMessage": "Customer ID is required and cannot be empty",
+    "timestamp": now()
+}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+                <raise-error doc:name="Raise Bad Request Error" doc:id="patch-raise-bad-request" type="CUSTOM:BAD_REQUEST" description="Invalid Customer ID" />
+            </when>
+            <otherwise>
+                <!-- Process the PATCH request -->
+                <ee:transform doc:name="Process Customer Update" doc:id="patch-process-update">
+                    <ee:message>
+                        <ee:set-payload>
+                            <![CDATA[%dw 2.0
+output application/json
+var requestData = vars.requestPayload
+var updatedFields = []
+    ++ (if (requestData.firstname?) ["firstname"] else [])
+    ++ (if (requestData.lastname?) ["lastname"] else [])
+    ++ (if (requestData.age?) ["age"] else [])
+---
+{
+    "id": vars.customerId,
+    "firstname": requestData.firstname default "Chid",
+    "lastname": requestData.lastname default "Customer",
+    "age": requestData.age default 18,
+    "updatedFields": updatedFields,
+    "timestamp": now()
+}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="updatedFields">
+                            <![CDATA[%dw 2.0
+output application/java
+var requestData = vars.requestPayload
+---
+[]
+++ (if (requestData.firstname?) ["firstname"] else [])
+++ (if (requestData.lastname?) ["lastname"] else [])
+++ (if (requestData.age?) ["age"] else [])]]>
+                        </ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+
+                <ee:transform doc:name="Build PATCH Success Response" doc:id="patch-build-response">
+                    <ee:message>
+                        <ee:set-payload resource="classpath://dwl/patch-customer-response.dwl" />
+                    </ee:message>
+                </ee:transform>
+            </otherwise>
+        </choice>
+
+        <logger level="INFO" doc:name="End Logger" doc:id="patch-end-logger" message='{"message": "Completed PATCH customer by ID flow", "customerId": "#[vars.customerId]", "correlationId": "#[correlationId]", "timestamp": "#[now()]"}' />
+
+        <error-handler>
+            <on-error-propagate type="CUSTOM:BAD_REQUEST" enableNotifications="true" logException="true" doc:name="Handle Bad Request" doc:id="patch-handle-bad-request">
+                <!-- Error response already set in payload -->
+            </on-error-propagate>
+            <on-error-propagate type="ANY" enableNotifications="true" logException="true" doc:name="Handle Generic Error" doc:id="patch-handle-generic-error">
+                <ee:transform doc:name="Generic Error Response" doc:id="patch-generic-error-response">
+                    <ee:message>
+                        <ee:set-payload>
+                            <![CDATA[%dw 2.0
+output application/json
+---
+{
+    "errorCode": "INTERNAL_SERVER_ERROR",
+    "errorMessage": "An unexpected error occurred while updating the customer",
+    "timestamp": now()
+}]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">500</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+
 </mule>
