@@ -114,4 +114,120 @@
         </munit:validation>
     </munit:test>
 
+    <munit:test name="patch-customer-by-id-flow-firstname-only" description="Verify that the PATCH customer by ID flow successfully updates customer data when provided with valid partial customer data (firstname only) and returns a proper success response">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{
+                    "firstname": "UpdatedFirstName"
+                }' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": "CUST-1001"
+                    },
+                    "method": "PATCH",
+                    "requestPath": "/api/customers/CUST-1001"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="patch-customer-by-id-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.successCode]" expected="CUSTOMER_UPDATED" />
+            <munit-tools:assert-equals actual="#[payload.customerId]" expected="CUST-1001" />
+            <munit-tools:assert-that expression="#[payload.successMessage]" is="#[MunitTools::containsString('CUST-1001')]" />
+            <munit-tools:assert-that expression="#[payload.updatedFields]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="patch-customer-by-id-flow-all-fields" description="Verify that the PATCH customer by ID flow successfully updates all customer fields when provided with complete customer data">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{
+                    "firstname": "UpdatedFirst",
+                    "lastname": "UpdatedLast",
+                    "age": 35
+                }' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": "CUST-2002"
+                    },
+                    "method": "PATCH",
+                    "requestPath": "/api/customers/CUST-2002"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="patch-customer-by-id-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.successCode]" expected="CUSTOMER_UPDATED" />
+            <munit-tools:assert-equals actual="#[payload.customerId]" expected="CUST-2002" />
+            <munit-tools:assert-that expression="#[payload.successMessage]" is="#[MunitTools::containsString('CUST-2002')]" />
+            <munit-tools:assert-that expression="#[payload.updatedFields]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-that expression="#[sizeOf(payload.updatedFields)]" is="#[MunitTools::equalTo(3)]" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="patch-customer-by-id-flow-lastname-age-only" description="Verify that the PATCH customer by ID flow successfully updates partial customer fields (lastname and age)">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{
+                    "lastname": "PartialUpdate",
+                    "age": 42
+                }' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": "CUST-3003"
+                    },
+                    "method": "PATCH",
+                    "requestPath": "/api/customers/CUST-3003"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="patch-customer-by-id-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.successCode]" expected="CUSTOMER_UPDATED" />
+            <munit-tools:assert-equals actual="#[payload.customerId]" expected="CUST-3003" />
+            <munit-tools:assert-that expression="#[payload.successMessage]" is="#[MunitTools::containsString('CUST-3003')]" />
+            <munit-tools:assert-that expression="#[payload.updatedFields]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-that expression="#[sizeOf(payload.updatedFields)]" is="#[MunitTools::equalTo(2)]" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="patch-customer-by-id-flow-empty-payload" description="Verify that the PATCH customer by ID flow handles empty payload gracefully">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{}' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": "CUST-4004"
+                    },
+                    "method": "PATCH",
+                    "requestPath": "/api/customers/CUST-4004"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="patch-customer-by-id-flow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.successCode]" expected="CUSTOMER_UPDATED" />
+            <munit-tools:assert-equals actual="#[payload.customerId]" expected="CUST-4004" />
+            <munit-tools:assert-that expression="#[payload.successMessage]" is="#[MunitTools::containsString('CUST-4004')]" />
+            <munit-tools:assert-that expression="#[payload.updatedFields]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-that expression="#[sizeOf(payload.updatedFields)]" is="#[MunitTools::equalTo(0)]" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
 </mule>
