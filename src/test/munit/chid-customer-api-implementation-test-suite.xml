@@ -230,4 +230,75 @@
         </munit:validation>
     </munit:test>
 
+    <!-- Error Handler Test Cases for Critical Business Flow Coverage -->
+
+    <munit:test name="patch-customer-by-id-flow-null-customer-id-error" description="Verify that the CUSTOM:BAD_REQUEST error handler is triggered when customer ID is null and validates proper error response structure">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{
+                    "firstname": "TestFirstName"
+                }' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": null
+                    },
+                    "method": "PATCH",
+                    "requestPath": "/api/customers/null"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <try>
+                <flow-ref name="patch-customer-by-id-flow" />
+                <error-handler>
+                    <on-error-continue type="CUSTOM:BAD_REQUEST">
+                        <set-variable variableName="errorCaught" value="true" />
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.errorCode]" expected="INVALID_CUSTOMER_ID" />
+            <munit-tools:assert-equals actual="#[payload.errorMessage]" expected="Customer ID is required and cannot be empty" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[vars.httpStatus]" expected="#[400]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="patch-customer-by-id-flow-empty-customer-id-error" description="Verify that the CUSTOM:BAD_REQUEST error handler is triggered when customer ID is empty string and validates proper error response">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{
+                    "firstname": "TestFirstName"
+                }' mediaType="application/json" />
+                <munit:attributes value='{
+                    "uriParams": {
+                        "id": ""
+                    },
+                    "method": "PATCH",
+                    "requestPath": "/api/customers/"
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <try>
+                <flow-ref name="patch-customer-by-id-flow" />
+                <error-handler>
+                    <on-error-continue type="CUSTOM:BAD_REQUEST">
+                        <set-variable variableName="errorCaught" value="true" />
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[payload.errorCode]" expected="INVALID_CUSTOMER_ID" />
+            <munit-tools:assert-equals actual="#[payload.errorMessage]" expected="Customer ID is required and cannot be empty" />
+            <munit-tools:assert-that expression="#[payload.timestamp]" is="#[MunitTools::notNullValue()]" />
+            <munit-tools:assert-equals actual="#[vars.httpStatus]" expected="#[400]" />
+        </munit:validation>
+    </munit:test>
+
+
 </mule>
