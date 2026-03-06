@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd 
+                         http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd 
+                         http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+
+    <munit:config name="chid-customer-api-interface-test-suite.xml" />
+
+    <munit:test name="chid-customer-interface-main-get-request" description="Verify that the interface main flow processes GET requests correctly">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{}' mediaType="application/json" />
+                <munit:attributes value='{
+                    "method": "GET",
+                    "requestPath": "/api/customers/12345",
+                    "uriParams": {
+                        "id": "12345"
+                    },
+                    "headers": {
+                        "content-type": "application/json"
+                    }
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="chid-customer-interface-main" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="chid-customer-interface-main-post-request" description="Verify that the interface main flow processes POST requests correctly">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{
+                    "firstName": "Test",
+                    "lastName": "Customer",
+                    "age": 25
+                }' mediaType="application/json" />
+                <munit:attributes value='{
+                    "method": "POST",
+                    "requestPath": "/api/customers/12345",
+                    "uriParams": {
+                        "id": "12345"
+                    },
+                    "headers": {
+                        "content-type": "application/json"
+                    }
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="chid-customer-interface-main" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="chid-customer-interface-console-access" description="Verify that the interface console flow is accessible">
+        <munit:behavior>
+            <munit:set-event>
+                <munit:payload value='{}' mediaType="text/html" />
+                <munit:attributes value='{
+                    "method": "GET",
+                    "requestPath": "/console/",
+                    "headers": {
+                        "accept": "text/html"
+                    }
+                }' />
+            </munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref name="chid-customer-interface-console" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+        </munit:validation>
+    </munit:test>
+
+</mule>
