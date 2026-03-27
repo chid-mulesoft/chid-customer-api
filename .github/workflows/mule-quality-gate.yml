@@ -9,7 +9,7 @@ on:
 jobs:
   enforce-mule-standards:
     # Only run if the review comes from the Copilot Bot
-    if: github.event.review.user.login == 'github-copilot[bot]'
+    # if: github.event.review.user.login == 'github-copilot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Extract and Validate Mule Review
