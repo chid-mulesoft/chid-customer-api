@@ -1,9 +1,10 @@
 name: MuleSoft Quality Gate
 on:
-  pull_request_review:
+  pull_request:             # Trigger on the PR itself (Developer action)
     types: [opened, synchronize, reopened]
-  workflow_dispatch:
-  pull_request:
+  pull_request_review:      # Trigger on the Copilot review
+    types: [submitted]
+  workflow_dispatch:        # Keep the manual "Run" button
 
 jobs:
   enforce-mule-standards:
