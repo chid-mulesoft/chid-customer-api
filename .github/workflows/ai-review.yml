@@ -1,0 +1,25 @@
+name: AI Mule Reviewer
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Get full history for better context
+
+      - name: Install Copilot CLI
+        run: |
+          npm install -g @github/copilot
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Run AI Review
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          # Use the CLI to review the changes based on your specific instructions
+          gh copilot suggest -p "Review the complete source code of this repo on which PR is raised,  using the standards defined in .github/copilot-instructions.md. Provide a summary of violations." --yes
