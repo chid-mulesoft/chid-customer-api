@@ -1,15 +1,15 @@
-name: AI Full Code Audit
+name: AI Mule Auditor
 on:
   pull_request:
     types: [opened, synchronize]
-  workflow_dispatch: # Allows manual trigger for full repo scan
+  workflow_dispatch:
 
 jobs:
-  audit:
+  full-audit:
     runs-on: ubuntu-latest
     permissions:
-      checks: write      # Required to create the Check Run UI
-      contents: read     # Required to scan files
+      checks: write      # Required to create the Check Run
+      contents: read     # Required to scan source files
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,30 +19,36 @@ jobs:
           npm install -g @github/copilot
           echo "$(npm config get prefix)/bin" >> $GITHUB_PATH
 
-      - name: Execute Full Repository Review
+      - name: Execute Full Review
         id: auditor
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
-          # Use -p for programmatic mode. 
-          # We point it to the source directory (e.g., src/main/mule) for a full review.
-          # The agent automatically loads .github/copilot-instructions.md.
-          
-          RESULT=$(copilot -p "Perform a full review of all files in src/main/mule based on our standards. Output ONLY the JSON array of annotations.")
-          
-          # Clean the output in case the AI included markdown backticks
-          CLEAN_JSON=$(echo "$RESULT" | sed -n '/\[/,/\]/p')
-          echo "ANNOTATIONS=$CLEAN_JSON" >> $GITHUB_OUTPUT
+          # 1. Run in silent mode (-s) to remove decorative terminal boxes
+          # --autopilot allows the agent to navigate the full repository
+          # --allow-all prevents the agent from stopping for manual folder permissions
+          RAW_OUTPUT=$(copilot -p "Perform a full repository audit of all Mule XML and DWL files based on .github/copilot-instructions.md. Output ONLY the JSON array of annotations." -s --autopilot --allow-all)
+
+          # 2. Extract ONLY the JSON array (strips any leading/trailing AI chatter)
+          CLEAN_JSON=$(echo "$RAW_OUTPUT" | sed -n '/\[/,/\]/p' | jq -c '.')
+
+          # 3. Use Heredoc syntax to save multiline JSON to GITHUB_OUTPUT
+          # We use a random delimiter to prevent conflicts with JSON content
+          DELIMITER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "ANNOTATIONS<<$DELIMITER" >> $GITHUB_OUTPUT
+          echo "$CLEAN_JSON" >> $GITHUB_OUTPUT
+          echo "$DELIMITER" >> $GITHUB_OUTPUT
 
       - name: Publish Check Run
         uses: LouisBrunner/checks-action@v2.0.0
         if: always()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: "MuleSoft Architecture Audit"
+          name: "MuleSoft Compliance Audit"
+          # Set conclusion to failure if JSON contains the word "failure"
           conclusion: ${{ contains(steps.auditor.outputs.ANNOTATIONS, 'failure') && 'failure' || 'success' }}
           output: |
             {
-              "summary": "Full repository audit completed using Copilot CLI.",
+              "summary": "Full repository audit completed by Copilot CLI.",
               "annotations": ${{ steps.auditor.outputs.ANNOTATIONS }}
             }
