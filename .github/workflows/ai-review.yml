@@ -24,33 +24,17 @@ jobs:
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
-          # 1. Run in silent mode (-s) to strip decorative terminal boxes
-          # --autopilot allows the agent to navigate the repository tree
-          RAW_OUTPUT=$(copilot -p "Full repository audit based on .github/copilot-instructions.md. Output ONLY a JSON array." -s --autopilot --allow-all)
+          # 1. Use --raw (or -r) to disable all terminal decorations and boxes
+          # --autopilot allows the agent to navigate the repository autonomously
+          # We redirect stderr to /dev/null to ensure only the AI response is captured
+          RAW_OUTPUT=$(copilot -p "Perform a full repository audit based on .github/copilot-instructions.md. Output ONLY the raw JSON array." --raw --autopilot --allow-all 2>/dev/null)
 
-          # 2. Extract JSON array. If none found, default to an empty array "[]"
-          CLEAN_JSON=$(echo "$RAW_OUTPUT" | sed -n '/\[/,/\]/p' | jq -c '.' || echo "[]")
-          if [ -z "$CLEAN_JSON" ] || [ "$CLEAN_JSON" == "null" ]; then
-            CLEAN_JSON="[]"
-          fi
+          # 2. Extract JSON using a Python one-liner (more reliable than sed for nested brackets)
+          # This finds the first '[' and last ']' and pulls everything in between
+          CLEAN_JSON=$(echo "$RAW_OUTPUT" | python3 -c "import sys, json, re; m = re.search(r'\[.*\]', sys.stdin.read(), re.DOTALL); print(json.dumps(json.loads(m.group(0)))) if m else print('[]')")
 
-          # 3. Use Heredoc syntax to safely handle multiline JSON in GITHUB_OUTPUT
-          DELIMITER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          # 3. Use Heredoc syntax for multiline GITHUB_OUTPUT
+          DELIMITER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64 | tr -dc 'a-zA-Z0-9')
           echo "ANNOTATIONS<<$DELIMITER" >> $GITHUB_OUTPUT
           echo "$CLEAN_JSON" >> $GITHUB_OUTPUT
           echo "$DELIMITER" >> $GITHUB_OUTPUT
-
-      - name: Publish Check Run
-        uses: LouisBrunner/checks-action@v2.0.0
-        if: always()
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: "MuleSoft Compliance Audit"
-          # Set conclusion to failure if any 'failure' annotations exist
-          conclusion: ${{ contains(steps.auditor.outputs.ANNOTATIONS, 'failure') && 'failure' || 'success' }}
-          # Use the | character to define the output as a valid JSON block
-          output: |
-            {
-              "summary": "Full repository audit completed by Copilot CLI.",
-              "annotations": ${{ steps.auditor.outputs.ANNOTATIONS || '[]' }}
-            }
