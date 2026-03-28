@@ -1,25 +1,48 @@
-name: AI Mule Reviewer
+name: AI Full Code Audit
 on:
   pull_request:
     types: [opened, synchronize]
+  workflow_dispatch: # Allows manual trigger for full repo scan
 
 jobs:
-  review:
+  audit:
     runs-on: ubuntu-latest
+    permissions:
+      checks: write      # Required to create the Check Run UI
+      contents: read     # Required to scan files
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Get full history for better context
 
       - name: Install Copilot CLI
         run: |
           npm install -g @github/copilot
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$(npm config get prefix)/bin" >> $GITHUB_PATH
 
-      - name: Run AI Review
+      - name: Execute Full Repository Review
+        id: auditor
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
-          # Use the CLI to review the changes based on your specific instructions
-          gh copilot suggest -p "Review the complete source code of this repo on which PR is raised,  using the standards defined in .github/copilot-instructions.md. Provide a summary of violations." --yes
+          # Use -p for programmatic mode. 
+          # We point it to the source directory (e.g., src/main/mule) for a full review.
+          # The agent automatically loads .github/copilot-instructions.md.
+          
+          RESULT=$(copilot -p "Perform a full review of all files in src/main/mule based on our standards. Output ONLY the JSON array of annotations.")
+          
+          # Clean the output in case the AI included markdown backticks
+          CLEAN_JSON=$(echo "$RESULT" | sed -n '/\[/,/\]/p')
+          echo "ANNOTATIONS=$CLEAN_JSON" >> $GITHUB_OUTPUT
+
+      - name: Publish Check Run
+        uses: LouisBrunner/checks-action@v2.0.0
+        if: always()
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: "MuleSoft Architecture Audit"
+          conclusion: ${{ contains(steps.auditor.outputs.ANNOTATIONS, 'failure') && 'failure' || 'success' }}
+          output: |
+            {
+              "summary": "Full repository audit completed using Copilot CLI.",
+              "annotations": ${{ steps.auditor.outputs.ANNOTATIONS }}
+            }
