@@ -24,16 +24,17 @@ jobs:
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
-          # 1. Run in silent mode (-s) to remove decorative terminal boxes
-          # --autopilot allows the agent to navigate the full repository
-          # --allow-all prevents the agent from stopping for manual folder permissions
-          RAW_OUTPUT=$(copilot -p "Perform a full repository audit of all Mule XML and DWL files based on .github/copilot-instructions.md. Output ONLY the JSON array of annotations." -s --autopilot --allow-all)
+          # 1. Run in silent mode (-s) to strip decorative terminal boxes
+          # --autopilot allows the agent to navigate the repository tree
+          RAW_OUTPUT=$(copilot -p "Full repository audit based on .github/copilot-instructions.md. Output ONLY a JSON array." -s --autopilot --allow-all)
 
-          # 2. Extract ONLY the JSON array (strips any leading/trailing AI chatter)
-          CLEAN_JSON=$(echo "$RAW_OUTPUT" | sed -n '/\[/,/\]/p' | jq -c '.')
+          # 2. Extract JSON array. If none found, default to an empty array "[]"
+          CLEAN_JSON=$(echo "$RAW_OUTPUT" | sed -n '/\[/,/\]/p' | jq -c '.' || echo "[]")
+          if [ -z "$CLEAN_JSON" ] || [ "$CLEAN_JSON" == "null" ]; then
+            CLEAN_JSON="[]"
+          fi
 
-          # 3. Use Heredoc syntax to save multiline JSON to GITHUB_OUTPUT
-          # We use a random delimiter to prevent conflicts with JSON content
+          # 3. Use Heredoc syntax to safely handle multiline JSON in GITHUB_OUTPUT
           DELIMITER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "ANNOTATIONS<<$DELIMITER" >> $GITHUB_OUTPUT
           echo "$CLEAN_JSON" >> $GITHUB_OUTPUT
@@ -45,10 +46,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: "MuleSoft Compliance Audit"
-          # Set conclusion to failure if JSON contains the word "failure"
+          # Set conclusion to failure if any 'failure' annotations exist
           conclusion: ${{ contains(steps.auditor.outputs.ANNOTATIONS, 'failure') && 'failure' || 'success' }}
+          # Use the | character to define the output as a valid JSON block
           output: |
             {
               "summary": "Full repository audit completed by Copilot CLI.",
-              "annotations": ${{ steps.auditor.outputs.ANNOTATIONS }}
+              "annotations": ${{ steps.auditor.outputs.ANNOTATIONS || '[]' }}
             }
